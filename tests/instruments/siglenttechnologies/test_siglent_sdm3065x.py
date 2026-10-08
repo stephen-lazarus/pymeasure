@@ -21,6 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
+import pytest
+
 from pymeasure.instruments.siglenttechnologies.siglent_sdm3065x import SDM3065X
 from pymeasure.test import expected_protocol
 
@@ -39,6 +41,56 @@ def test_configure_voltage_ac():
         [("CONF:VOLT:AC 200", None)]
     ) as inst:
         inst.configure_voltage(range=200, ac=True)
+
+
+def test_configure_voltage_dc_nplc():
+    with expected_protocol(
+        SDM3065X,
+        [("CONF:VOLT:DC AUTO", None),
+         ("VOLT:DC:NPLC 10", None)]
+    ) as inst:
+        inst.configure_voltage(nplc=10)
+
+
+def test_configure_current_dc_nplc():
+    with expected_protocol(
+        SDM3065X,
+        [("CONF:CURR:DC 0.2", None),
+         ("CURR:DC:NPLC 0.5", None)]
+    ) as inst:
+        inst.configure_current(range=0.2, nplc=0.5)
+
+
+def test_configure_voltage_ac_nplc_raises():
+    with expected_protocol(SDM3065X, []) as inst:
+        with pytest.raises(ValueError):
+            inst.configure_voltage(ac=True, nplc=10)
+
+
+def test_voltage_dc_nplc():
+    with expected_protocol(
+        SDM3065X,
+        [("VOLT:DC:NPLC 0.005", None),
+         ("VOLT:DC:NPLC?", "+5.00000000E-03")]
+    ) as inst:
+        inst.voltage_dc_nplc = 0.005
+        assert inst.voltage_dc_nplc == 0.005
+
+
+def test_current_dc_nplc():
+    with expected_protocol(
+        SDM3065X,
+        [("CURR:DC:NPLC 100", None),
+         ("CURR:DC:NPLC?", "+1.00000000E+02")]
+    ) as inst:
+        inst.current_dc_nplc = 100
+        assert inst.current_dc_nplc == 100
+
+
+def test_nplc_invalid():
+    with expected_protocol(SDM3065X, []) as inst:
+        with pytest.raises(ValueError):
+            inst.voltage_dc_nplc = 2
 
 
 def test_configure_resistance_4w():

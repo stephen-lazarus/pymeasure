@@ -205,21 +205,35 @@ class SDM3065X(SCPIUnknownMixin, Instrument):
     # CONFigure Subsystem - set up a measurement function without triggering a reading
     # ==========================================================================================
 
-    def configure_voltage(self, range="AUTO", ac=False):
+    def configure_voltage(self, range="AUTO", ac=False, nplc=None):
         """Configure the instrument for a voltage measurement.
 
         :param range: full-scale range, or 'AUTO' (default), 'MIN', 'MAX', 'DEF'
         :param ac: ``True`` for AC voltage, ``False`` (default) for DC voltage
+        :param nplc: integration time in power line cycles for DC voltage, one of
+            100, 10, 1, 0.5, 0.05, 0.005; ``None`` (default) leaves it unchanged.
+            Only valid for DC voltage.
         """
+        if ac and nplc is not None:
+            raise ValueError("NPLC can only be set for DC voltage measurements.")
         self.write(f"CONF:VOLT:{'AC' if ac else 'DC'} {range}")
+        if nplc is not None:
+            self.voltage_dc_nplc = nplc
 
-    def configure_current(self, range="AUTO", ac=False):
+    def configure_current(self, range="AUTO", ac=False, nplc=None):
         """Configure the instrument for a current measurement.
 
         :param range: full-scale range, or 'AUTO' (default), 'MIN', 'MAX', 'DEF'
         :param ac: ``True`` for AC current, ``False`` (default) for DC current
+        :param nplc: integration time in power line cycles for DC current, one of
+            100, 10, 1, 0.5, 0.05, 0.005; ``None`` (default) leaves it unchanged.
+            Only valid for DC current.
         """
+        if ac and nplc is not None:
+            raise ValueError("NPLC can only be set for DC current measurements.")
         self.write(f"CONF:CURR:{'AC' if ac else 'DC'} {range}")
+        if nplc is not None:
+            self.current_dc_nplc = nplc
 
     def configure_resistance(self, range="AUTO", wires=2):
         """Configure the instrument for a resistance measurement.
@@ -262,6 +276,30 @@ class SDM3065X(SCPIUnknownMixin, Instrument):
     def configure_diode(self):
         """Configure the instrument for a diode measurement."""
         self.write("CONF:DIOD")
+
+    # ==========================================================================================
+    # SENSe Subsystem - measurement function settings
+    # ==========================================================================================
+
+    NPLC_VALUES = [100, 10, 1, 0.5, 0.05, 0.005]
+
+    voltage_dc_nplc = Instrument.control(
+        "VOLT:DC:NPLC?", "VOLT:DC:NPLC %g",
+        """Control the DC voltage integration time in power line cycles
+        (float strictly in 100, 10, 1, 0.5, 0.05, 0.005).
+        """,
+        validator=strict_discrete_set,
+        values=NPLC_VALUES,
+    )
+
+    current_dc_nplc = Instrument.control(
+        "CURR:DC:NPLC?", "CURR:DC:NPLC %g",
+        """Control the DC current integration time in power line cycles
+        (float strictly in 100, 10, 1, 0.5, 0.05, 0.005).
+        """,
+        validator=strict_discrete_set,
+        values=NPLC_VALUES,
+    )
 
     # ==========================================================================================
     # Sampling / triggering
