@@ -81,6 +81,49 @@ class DL3021A(SCPIMixin, Instrument):
         dynamic=True
     )
 
+    voltage_range = Instrument.control(
+        ":SOUR:VOLT:RANG?", ":SOUR:VOLT:RANG %g",
+        """Sets the voltage range in CV mode (15 V low range or 150 V high range).
+           Queries the voltage range set in CV mode.
+
+        :type : float
+        """,
+        validator=truncated_range,
+        values=[0, 150],
+    )
+
+    set_voltage = Instrument.control(
+        ":SOUR:VOLT:LEV:IMM?", ":SOUR:VOLT:LEV:IMM %g",
+        """Sets the load's regulated voltage in CV mode.
+           Queries the load's regulated voltage set in CV mode.
+
+        :type : float
+        """,
+        validator=truncated_range,
+        values=[0, 150],
+        dynamic=True
+    )
+
+    voltage_ilim = Instrument.control(
+        ":SOUR:VOLT:ILIM?", ":SOUR:VOLT:ILIM %g",
+        """Sets the current limit in CV mode.
+           Queries the current limit set in CV mode.
+
+        :type : float
+        """,
+        validator=truncated_range,
+        values=[0, 40],
+        dynamic=True
+    )
+
+    current = Instrument.measurement(
+        ":MEAS:CURR:DC?",
+        """Reads the input current of the instrument.
+
+        :type : float
+        """
+    )
+
     input = Instrument.control(
         ":SOUR:INP:STAT?", ":SOUR:INP:STAT %d",
         """Sets the input of the electronic load to be on or off.
